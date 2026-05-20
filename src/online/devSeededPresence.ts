@@ -9,7 +9,7 @@
 
 import type { OnlinePlayer } from "./useLobbyPresence";
 
-export const DEV_MOCK_PRESENCE = true;
+export const DEV_MOCK_PRESENCE = false;
 
 /**
  * 8 dels 13 perfils sembrats apareixen com a "connectats" (els 5 restants
