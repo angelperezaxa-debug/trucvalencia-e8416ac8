@@ -108,7 +108,13 @@ export async function setUsername(raw: string): Promise<void> {
   const u = normalizeUsername(raw);
   const formatErr = validateUsernameFormat(u);
   if (formatErr) throw new Error(formatErr);
-  const { error } = await supabase.rpc("set_username", { p_username: u });
+  await ensureOwnProfileExists();
+  let { error } = await supabase.rpc("set_username", { p_username: u });
+  const firstMessage = (error?.message || "").toLowerCase();
+  if (error && firstMessage.includes("profile_not_found")) {
+    await ensureOwnProfileExists();
+    ({ error } = await supabase.rpc("set_username", { p_username: u }));
+  }
   if (error) {
     const msg = (error.message || "").toLowerCase();
     for (const [k, v] of Object.entries(ERR_MAP)) {
