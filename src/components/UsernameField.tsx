@@ -29,11 +29,16 @@ export function UsernameField({
     if (!editing) return;
     const u = normalizeUsername(draft);
     if (u === (current ?? "")) {
-      setAvailable(null); setFormatErr(null); return;
+      setAvailable(null);
+      setFormatErr(null);
+      return;
     }
     const err = validateUsernameFormat(u);
     setFormatErr(err);
-    if (err) { setAvailable(null); return; }
+    if (err) {
+      setAvailable(null);
+      return;
+    }
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     setChecking(true);
     debounceRef.current = window.setTimeout(async () => {
@@ -46,7 +51,9 @@ export function UsernameField({
         setChecking(false);
       }
     }, 400);
-    return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
   }, [draft, editing, current]);
 
   async function save() {
@@ -72,7 +79,14 @@ export function UsernameField({
           </div>
           <div className="font-mono text-base text-gold truncate">{current}</div>
         </div>
-        <Button size="sm" variant="outline" onClick={() => { setDraft(current); setEditing(true); }}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setDraft(current);
+            setEditing(true);
+          }}
+        >
           Canviar
         </Button>
       </div>
@@ -80,7 +94,10 @@ export function UsernameField({
   }
 
   const canSave =
-    !saving && !checking && !formatErr && available !== false &&
+    !saving &&
+    !checking &&
+    !formatErr &&
+    available !== false &&
     normalizeUsername(draft) !== (current ?? "");
 
   return (
@@ -96,31 +113,58 @@ export function UsernameField({
           placeholder="elteunom"
           autoFocus
           className="font-mono flex-1"
-          onKeyDown={(e) => { if (e.key === "Enter" && canSave) void save(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && canSave) void save();
+          }}
         />
         <Button size="icon" onClick={save} disabled={!canSave} aria-label="Desar">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         </Button>
         {current && (
-          <Button size="icon" variant="ghost" onClick={() => { setDraft(current); setEditing(false); }} aria-label="Cancel·lar">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => {
+              setDraft(current);
+              setEditing(false);
+            }}
+            aria-label="Cancel·lar"
+          >
             <X className="w-4 h-4" />
           </Button>
         )}
       </div>
       <div className="text-[11px] min-h-[16px]">
         {formatErr && <span className="text-destructive">{formatErr}</span>}
-        {!formatErr && checking && <span className="text-muted-foreground">Comprovant disponibilitat…</span>}
-        {!formatErr && !checking && available === true && <span className="text-emerald-500">Disponible ✓</span>}
-        {!formatErr && !checking && available === false && <span className="text-destructive">Ja agafat</span>}
-        {!formatErr && !checking && available === null && normalizeUsername(draft) !== (current ?? "") && (
-          <span className="text-muted-foreground">No s'ha pogut comprovar; pots provar de desar-lo.</span>
+        {!formatErr && checking && (
+          <span className="text-muted-foreground">Comprovant disponibilitat…</span>
         )}
-        {!formatErr && !checking && available === null && normalizeUsername(draft) === (current ?? "") && (
-          <span className="text-muted-foreground">3-20 caràcters: lletres minúscules, xifres i _</span>
+        {!formatErr && !checking && available === true && (
+          <span className="text-emerald-500">Disponible ✓</span>
         )}
+        {!formatErr && !checking && available === false && (
+          <span className="text-destructive">Ja agafat</span>
+        )}
+        {!formatErr &&
+          !checking &&
+          available === null &&
+          normalizeUsername(draft) !== (current ?? "") && (
+            <span className="text-muted-foreground">
+              No s'ha pogut comprovar; pots provar de desar-lo.
+            </span>
+          )}
+        {!formatErr &&
+          !checking &&
+          available === null &&
+          normalizeUsername(draft) === (current ?? "") && (
+            <span className="text-muted-foreground">
+              3-20 caràcters: lletres minúscules, xifres i _
+            </span>
+          )}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Aquest és el nom que es veurà a les classificacions i en partides públiques. El teu nom real es queda privat.
+        Aquest és el nom que es veurà a les classificacions i en partides públiques. El teu nom real
+        es queda privat.
       </p>
     </div>
   );
