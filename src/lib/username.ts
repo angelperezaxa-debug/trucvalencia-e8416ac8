@@ -16,6 +16,54 @@ export function validateUsernameFormat(raw: string): string | null {
   return null;
 }
 
+function readLocalDisplayName(): string {
+  if (typeof window === "undefined") return "Jugador";
+  try {
+    const stored = window.localStorage.getItem("truc:player-name")?.trim();
+    return stored ? stored.slice(0, 24) : "Jugador";
+  } catch {
+    return "Jugador";
+  }
+}
+
+function makeFriendCode(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 8; i += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+async function ensureOwnProfileExists(): Promise<void> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error("Has d'iniciar sessió");
+
+  const { data: existing, error: readError } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (existing) return;
+  if (readError && readError.code !== "PGRST116") {
+    console.warn("[ensureOwnProfileExists] read", readError.message);
+  }
+
+  const { error: insertError } = await supabase.from("profiles").insert({
+    user_id: user.id,
+    display_name: readLocalDisplayName(),
+    email: user.email ?? null,
+    friend_code: makeFriendCode(),
+  });
+
+  if (insertError && insertError.code !== "23505") {
+    throw insertError;
+  }
+}
+
 async function isUsernameFreeInProfiles(username: string): Promise<boolean | null> {
   const { count, error } = await supabase
     .from("profiles")
