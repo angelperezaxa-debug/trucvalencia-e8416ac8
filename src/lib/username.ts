@@ -16,12 +16,35 @@ export function validateUsernameFormat(raw: string): string | null {
   return null;
 }
 
-export async function isUsernameAvailable(raw: string): Promise<boolean> {
+async function isUsernameFreeInProfiles(username: string): Promise<boolean | null> {
+  const { count, error } = await supabase
+    .from("profiles")
+    .select("user_id", { count: "exact", head: true })
+    .eq("username", username);
+  if (error) return null;
+  return (count ?? 0) === 0;
+}
+
+async function isUsernameReserved(username: string): Promise<boolean | null> {
+  const { data, error } = await supabase.rpc("is_username_reserved", { p_username: username });
+  if (error) return null;
+  return Boolean(data);
+}
+
+export async function isUsernameAvailable(raw: string): Promise<boolean | null> {
   const u = normalizeUsername(raw);
   if (validateUsernameFormat(u)) return false;
   const { data, error } = await supabase.rpc("is_username_available", { p_username: u });
-  if (error) return false;
-  return Boolean(data);
+  if (!error && data === true) return true;
+
+  const reserved = await isUsernameReserved(u);
+  if (reserved === true) return false;
+
+  const freeInProfiles = await isUsernameFreeInProfiles(u);
+  if (freeInProfiles !== null) return freeInProfiles;
+
+  if (error) console.warn("[isUsernameAvailable]", error.message);
+  return data === false ? false : null;
 }
 
 const ERR_MAP: Record<string, string> = {
