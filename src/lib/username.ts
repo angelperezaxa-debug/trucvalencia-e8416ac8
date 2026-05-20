@@ -44,7 +44,7 @@ export async function isUsernameAvailable(raw: string): Promise<boolean | null> 
   if (freeInProfiles !== null) return freeInProfiles;
 
   if (error) console.warn("[isUsernameAvailable]", error.message);
-  return data === false ? false : null;
+  return null;
 }
 
 const ERR_MAP: Record<string, string> = {
