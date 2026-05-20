@@ -75,7 +75,7 @@ export function UsernameField({
   }
 
   const canSave =
-    !saving && !checking && !formatErr && available === true &&
+    !saving && !checking && !formatErr && available !== false &&
     normalizeUsername(draft) !== (current ?? "");
 
   return (
@@ -107,8 +107,11 @@ export function UsernameField({
         {!formatErr && checking && <span className="text-muted-foreground">Comprovant disponibilitat…</span>}
         {!formatErr && !checking && available === true && <span className="text-emerald-500">Disponible ✓</span>}
         {!formatErr && !checking && available === false && <span className="text-destructive">Ja agafat</span>}
+        {!formatErr && !checking && available === null && normalizeUsername(draft) !== (current ?? "") && (
+          <span className="text-muted-foreground">No s'ha pogut comprovar; pots provar de desar-lo.</span>
+        )}
         {!formatErr && available === null && !checking && (
-          <span className="text-muted-foreground">3-20 caràcters: lletres minúscules, xifres i _</span>
+          <span className="text-muted-foreground hidden">3-20 caràcters: lletres minúscules, xifres i _</span>
         )}
       </div>
       <p className="text-[10px] text-muted-foreground">
