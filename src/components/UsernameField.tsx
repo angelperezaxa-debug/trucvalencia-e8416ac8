@@ -37,9 +37,14 @@ export function UsernameField({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     setChecking(true);
     debounceRef.current = window.setTimeout(async () => {
-      const ok = await isUsernameAvailable(u);
-      setAvailable(ok);
-      setChecking(false);
+      try {
+        const ok = await isUsernameAvailable(u);
+        setAvailable(ok);
+      } catch {
+        setAvailable(null);
+      } finally {
+        setChecking(false);
+      }
     }, 400);
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [draft, editing, current]);
@@ -110,8 +115,8 @@ export function UsernameField({
         {!formatErr && !checking && available === null && normalizeUsername(draft) !== (current ?? "") && (
           <span className="text-muted-foreground">No s'ha pogut comprovar; pots provar de desar-lo.</span>
         )}
-        {!formatErr && available === null && !checking && (
-          <span className="text-muted-foreground hidden">3-20 caràcters: lletres minúscules, xifres i _</span>
+        {!formatErr && !checking && available === null && normalizeUsername(draft) === (current ?? "") && (
+          <span className="text-muted-foreground">3-20 caràcters: lletres minúscules, xifres i _</span>
         )}
       </div>
       <p className="text-[10px] text-muted-foreground">
