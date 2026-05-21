@@ -552,6 +552,8 @@ function withSchema<S extends z.ZodTypeAny>(
 }
 
 const handlers: Record<string, Handler> = {
+  ping: async () => ({ ok: true as const, version: "phase-2" }),
+
   // Fase 2
   createRoom: withSchema(CreateRoomSchema, createRoom),
   joinRoom: withSchema(JoinRoomSchema, joinRoom),
