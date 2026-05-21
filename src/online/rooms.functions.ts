@@ -32,6 +32,13 @@ async function rpc<T>(fn: string, data: unknown): Promise<T> {
     return result as T;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    if (fn === "listMyActiveRooms" && msg === "not_implemented") {
+      reportRpcError(
+        `rpc:${fn}`,
+        "rooms-rpc desplegada todavía es la Fase 1; se omite la lista de partidas activas hasta redeploy.",
+      );
+      return { rooms: [] } as T;
+    }
     reportRpcError(`rpc:${fn}`, msg);
     throw e;
   }
