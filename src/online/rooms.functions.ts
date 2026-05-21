@@ -7,6 +7,10 @@ import type { RoomFullDTO, SeatKind } from "./types";
 import type { ChatPhraseId } from "@/game/phrases";
 import { reportRpcError, reportRpcOk } from "./diagnostics";
 
+function isNotImplementedError(message: string) {
+  return message === "not_implemented" || message.includes("not_implemented");
+}
+
 async function rpc<T>(fn: string, data: unknown): Promise<T> {
   try {
     const { data: result, error } = await supabase.functions.invoke("rooms-rpc", {
@@ -32,10 +36,17 @@ async function rpc<T>(fn: string, data: unknown): Promise<T> {
     return result as T;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (fn === "listMyActiveRooms" && msg === "not_implemented") {
+    if (fn === "listMyActiveRooms" && isNotImplementedError(msg)) {
       reportRpcError(
         `rpc:${fn}`,
         "rooms-rpc desplegada todavía es la Fase 1; se omite la lista de partidas activas hasta redeploy.",
+      );
+      return { rooms: [] } as T;
+    }
+    if (fn === "listLobbyRooms" && isNotImplementedError(msg)) {
+      reportRpcError(
+        `rpc:${fn}`,
+        "rooms-rpc desplegada todavía es la Fase 1; se muestra el lobby vacío hasta redeploy.",
       );
       return { rooms: [] } as T;
     }
