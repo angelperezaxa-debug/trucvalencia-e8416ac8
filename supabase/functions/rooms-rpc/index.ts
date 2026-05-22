@@ -534,11 +534,15 @@ interface Card { suit: Suit; rank: Rank; id: string }
 const ENGINE_SUITS: Suit[] = ["oros", "copes", "espases", "bastos"];
 const ENGINE_RANKS: Rank[] = [1, 3, 4, 5, 6, 7];
 
+// Mazo de Truc Valencià: 22 cartas.
+//   - 3, 4, 5, 6, 7 en los cuatro palos (20 cartas)
+//   - 1 de espases y 1 de bastos (2 cartas)
+//   Se eliminan por completo: 2, 8, 9, 10, 11, 12.
 function buildDeck(): Card[] {
   const deck: Card[] = [];
   for (const suit of ENGINE_SUITS) {
     for (const rank of ENGINE_RANKS) {
-      // El 1 sólo existe en espases y bastos (mazo de Truc Valencià)
+      // El 1 sólo existe en espases y bastos.
       if (rank === 1 && suit !== "espases" && suit !== "bastos") continue;
       deck.push({ suit, rank, id: `${rank}-${suit}` });
     }
