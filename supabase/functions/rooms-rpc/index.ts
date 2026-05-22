@@ -678,7 +678,7 @@ const handlers: Record<string, Handler> = {
   adminListChatFlagAudit: notImplemented,
 
   // Fase 4 — motor del juego
-  startMatch: notImplemented,
+  startMatch: withSchema(StartMatchSchema, startMatch),
   submitAction: notImplemented,
   setPaused: notImplemented,
   rematchStay: notImplemented,
