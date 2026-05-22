@@ -524,6 +524,108 @@ async function adminCloseRoom(input: z.infer<typeof AdminCloseSchema>) {
 }
 
 // ---------------------------------------------------------------------------
+// Motor mínimo del juego — Fase 4 (inicio)
+// ---------------------------------------------------------------------------
+
+type Suit = "oros" | "copes" | "espases" | "bastos";
+type Rank = 1 | 3 | 4 | 5 | 6 | 7;
+interface Card { suit: Suit; rank: Rank; id: string }
+
+const ENGINE_SUITS: Suit[] = ["oros", "copes", "espases", "bastos"];
+const ENGINE_RANKS: Rank[] = [1, 3, 4, 5, 6, 7];
+
+function buildDeck(): Card[] {
+  const deck: Card[] = [];
+  for (const suit of ENGINE_SUITS) {
+    for (const rank of ENGINE_RANKS) {
+      // El 1 sólo existe en espases y bastos (mazo de Truc Valencià)
+      if (rank === 1 && suit !== "espases" && suit !== "bastos") continue;
+      deck.push({ suit, rank, id: `${rank}-${suit}` });
+    }
+  }
+  return deck;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+// ---- startMatch -----------------------------------------------------------
+const StartMatchSchema = z.object({
+  roomId: z.string().uuid(),
+  deviceId: z.string().min(1),
+});
+
+async function startMatch(input: z.infer<typeof StartMatchSchema>) {
+  const room = await fetchRoomById(input.roomId);
+  if (!room) throw new Error("room_not_found");
+  if (room.host_device !== input.deviceId) throw new Error("forbidden");
+  if (room.status !== "lobby") throw new Error("not_in_lobby");
+
+  // Verifica que los 4 asientos están cubiertos (humano sentado o bot).
+  const players = await fetchPlayers(room.id);
+  const occupied = new Set(players.map((p) => p.seat));
+  for (let i = 0; i < 4; i++) {
+    if (room.seat_kinds[i] === "human" && !occupied.has(i)) {
+      throw new Error("seat_empty:" + i);
+    }
+    if (room.seat_kinds[i] === "empty") throw new Error("seat_empty:" + i);
+  }
+
+  // Reparte 3 cartas a cada asiento.
+  const deck = shuffle(buildDeck());
+  const hands: Record<number, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
+  let idx = 0;
+  for (let n = 0; n < 3; n++) {
+    for (let seat = 0; seat < 4; seat++) {
+      hands[seat]!.push(deck[idx++]!);
+    }
+  }
+  const remaining = deck.slice(idx);
+
+  const mano = room.initial_mano;
+  const turn = mano;
+  const nowTs = nowIso();
+
+  const matchState = {
+    version: 1,
+    phase: "play" as const,
+    mano,
+    turn,
+    round: 1,
+    trickIndex: 0,
+    hands,
+    tricks: [{ cards: [] as { seat: number; card: Card }[] }],
+    deckRemaining: remaining,
+    score: { team02: 0, team13: 0 }, // equipos: 0+2 vs 1+3
+    targetCames: room.target_cames,
+    targetCama: room.target_cama,
+    envit: { state: "idle" as const, value: 0 },
+    truc: { state: "idle" as const, value: 1 },
+    startedAt: nowTs,
+  };
+
+  const { error } = await supabase
+    .from("rooms")
+    .update({
+      status: "playing",
+      match_state: matchState,
+      turn_started_at: nowTs,
+      paused_at: null,
+      pending_proposal: null,
+    })
+    .eq("id", room.id);
+  if (error) throw new Error(error.message);
+
+  return { ok: true as const, roomId: room.id, mano, turn };
+}
+
+// ---------------------------------------------------------------------------
 // Stubs para fases siguientes
 // ---------------------------------------------------------------------------
 const notImplemented = async () => {
