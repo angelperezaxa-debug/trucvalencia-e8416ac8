@@ -694,6 +694,12 @@ const handlers: Record<string, Handler> = {
   advanceBots: notImplemented,
 };
 
+function resolveFn(fn: string): string {
+  const normalized = fn.replace(/[-_\s]/g, "").toLowerCase();
+  if (normalized === "startmatch") return "startMatch";
+  return fn;
+}
+
 const RequestSchema = z.object({
   fn: z.string().min(1),
   data: z.unknown().optional(),
@@ -716,7 +722,8 @@ serve(async (req) => {
   if (!parsed.success) return json({ error: "invalid_body" }, 400);
 
   const { fn, data } = parsed.data;
-  const handler = handlers[fn];
+  const handlerKey = resolveFn(fn);
+  const handler = handlers[handlerKey];
   if (!handler) return json({ error: `unknown_fn:${fn}` }, 400);
 
   try {
